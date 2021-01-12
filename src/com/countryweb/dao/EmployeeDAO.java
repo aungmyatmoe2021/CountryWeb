@@ -8,5 +8,6 @@ public interface EmployeeDAO<E> {
 	public boolean insertRecord(E e); 
 	public boolean updateRecord(E e);
 	public boolean deleteRecord(E e);
-	public List<E> advancedSearch(String keyFilter, String keyValue, int pageIndex);
+	public int totalRecords(String keyFilter, String keyValue, int startPageIndex, int endPageIndex);
+	public List<E> advancedSearch(String keyFilter, String keyValue, int startPageIndex, int endPageIndex);
 }

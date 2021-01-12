@@ -1,3 +1,4 @@
+<%@page import="java.lang.reflect.Array"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="com.countryweb.model.Employee"%>
 <%@page import="java.util.List"%>
@@ -11,9 +12,9 @@
 <title>Employee Info List</title>
 </head>
 <body>
-	<form name="frmEmplyee" method="get">
+	<form name="frmEmplyee" method="post">
 		<div>
-			<select name="keyFilter">
+			<select name="keyFilter" onchange="">
 				<option selected="selected" value="all">Filter By</option>
 				<option value="birth_date">Birth Date</option>
 				<option value="first_name">First Name</option>
@@ -26,7 +27,7 @@
 		</div><hr>
 		<% 
 			String keyFilter = "all" , keyValue="";
-			int index=1;
+			Integer index=0,previousIndex = 0;
 			double pgIndex=0;
 			if(request.getParameter("keyFilter") != null){
 				keyFilter = request.getParameter("keyFilter");
@@ -36,21 +37,17 @@
 			}
 			
 			EmployeeImp employeeImp = new EmployeeImp(); 
-			List<Employee> records = employeeImp.advancedSearch(keyFilter, keyValue,0);
+			int recordCount = employeeImp.totalRecords(keyFilter, keyValue,0,0);
 			
 			
 		%>
 		<div>
-			<label>Total Records : <%= records.size() %></label>
-			<% 
-				pgIndex = records.size() / 20.0;
-				System.out.println("Page Index : "+pgIndex);
-				if(index < pgIndex){
-			%>
-				<input type="hidden" name="hidIndex" value="<%= index %>"/>
-				<input type="submit" name="butNext" value=">>" onclick="" />
+			<label>Total Records : <%= recordCount %></label>
 			<%
-				}
+
+			pgIndex = recordCount / 20.0;
+			index = request.getParameter("hidIndex") == null ? 0 : Integer.parseInt(request.getParameter("hidIndex"));
+			previousIndex = request.getParameter("hidPreviousIndex") == null ? 0 : Integer.parseInt(request.getParameter("hidPreviousIndex"));
 			%>
 		</div><hr>
 		<table>
@@ -63,8 +60,20 @@
 				<th>Hire Date</th>
 			</tr>
 			<% 
-				for(int i=0;i<records.size();i++){ 
-					Employee emp = records.get(i);
+				EmployeeImp employeeImp2 = new EmployeeImp(); 
+				List<Employee> records2 = new ArrayList<Employee>();
+				if(request.getParameter("butPrevious") != null){
+					records2 = employeeImp2.advancedSearch(keyFilter, keyValue,(previousIndex * 20), 20);
+				}else if(request.getParameter("butLast") != null){
+					records2 = employeeImp2.advancedSearch(keyFilter, keyValue,(recordCount - 20), 20);
+				}else if(request.getParameter("butFirst") != null){
+					records2 = employeeImp2.advancedSearch(keyFilter, keyValue,0, 20);
+				}else{
+					records2 = employeeImp2.advancedSearch(keyFilter, keyValue,(index * 20), 20);
+				}
+			
+				for(int i=0;i<records2.size();i++){ 
+					Employee emp = records2.get(i);
 			%>
 				<tr>
 					<td><%= emp.getEmpNo() %></td>
@@ -76,6 +85,36 @@
 				</tr>
 			<% } %>
 		</table>
+		<div>
+			<%-- <% 
+				if(request.getParameter("butPrevious") != null){
+			%>
+				<input type="submit" name="butPrevious" value="&lt;"  />
+				<input type="hidden" name="hidPreviousIndex" value="<%= index-1 %>"/>
+			<%
+				}
+			%> --%>
+		
+			<% 
+				if(index < pgIndex-1 && request.getParameter("butLast") == null){
+			%>
+				<input type="submit" name="butNext" value="&gt;"  />
+				<input type="submit" name="butLast" value="&gt;&gt;"  />
+				<input type="hidden" name="hidIndex" value="<%= index+1 %>"/>
+			<%
+				}
+			%>
+			
+			<% 
+				if(request.getParameter("butLast") != null){
+			%>
+				<!-- <input type="submit" name="butNext" value="&gt;"  /> -->
+				<input type="submit" name="butFirst" value="&lt;&lt;"  />
+				<input type="hidden" name="hidIndex" value="<%= index+1 %>"/>
+			<%
+				}
+			%>
+		</div>
 	</form>
 </body>
 </html>

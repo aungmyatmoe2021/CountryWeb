@@ -41,17 +41,14 @@ public class EmployeeImp implements EmployeeDAO<Employee> {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
+	
 	@Override
-	public List<Employee> advancedSearch(String keyFilter, String keyValue, int pageIndex) {
-		// TODO Auto-generated method stub
+	public int totalRecords(String keyFilter, String keyValue, int startPageIndex, int endPageIndex) {
 		Connection con = null;
 		Statement stmt = null;
 		ResultSet rset = null;
-		String selectQuery = "Select `emp_no`,`birth_date`,`first_name`,`last_name`,`gender`,`hire_date` from employees ";
-		List<Employee> records = new ArrayList<Employee>();
-		
-		System.out.println("KEY Filter : "+keyFilter +", KEY VALUE : "+keyValue);
+		String selectQuery = "select count(*) as count from employees ";
+		int recordCount = 0;
 		
 		try {
 			con = DatabaseUtil.getDBConnection();
@@ -71,11 +68,56 @@ public class EmployeeImp implements EmployeeDAO<Employee> {
 			if(keyFilter.equals("all")) {
 				selectQuery += "";
 			}
-			if(pageIndex == 0) {
+			if(startPageIndex == 0 && endPageIndex == 0) {
+				rset = stmt.executeQuery(selectQuery);
+			}
+			
+			while(rset.next()) {
+				recordCount = rset.getInt("count");
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			DatabaseUtil.closeSqlResource(con, stmt, rset);
+		}
+		return recordCount;
+	}
+
+	@Override
+	public List<Employee> advancedSearch(String keyFilter, String keyValue,  int startPageIndex, int endPageIndex) {
+		// TODO Auto-generated method stub
+		Connection con = null;
+		Statement stmt = null;
+		ResultSet rset = null;
+		String selectQuery = "Select `emp_no`,`birth_date`,`first_name`,`last_name`,`gender`,`hire_date` from employees ";
+		List<Employee> records = new ArrayList<Employee>();
+		
+		try {
+			con = DatabaseUtil.getDBConnection();
+			stmt = con.createStatement();
+			if(keyFilter.equals("first_name") || keyFilter.equals("last_name")) {
+				selectQuery += "where `first_name` like '%"+keyValue+"%' or `last_name` like '%"+keyValue+"%'";
+			}
+			if(keyFilter.equals("gender")) {
+				selectQuery += "where `gender`='"+keyValue+"'";
+			}
+			if(keyFilter.equals("birth_date")) {
+				selectQuery += "where year(`birth_date`) = YEAR('"+keyValue+"-01-01')";
+			}
+			if(keyFilter.equals("hire_date")) {
+				selectQuery += "where year(`hire_date`) = YEAR('"+keyValue+"-01-01')";
+			}
+			if(keyFilter.equals("all")) {
+				selectQuery += "";
+			}
+			if(startPageIndex == 0 && endPageIndex == 0) {
 				rset = stmt.executeQuery(selectQuery + " limit 50");
 			}else {
-				rset = stmt.executeQuery(selectQuery + " limit "+pageIndex+",50");
+				rset = stmt.executeQuery(selectQuery + " limit "+startPageIndex+","+endPageIndex);
 			}
+			
+			System.out.println(selectQuery + " limit "+startPageIndex+","+endPageIndex);
 			
 			while(rset.next()) {
 				Employee e = new Employee();
